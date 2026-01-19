@@ -18,7 +18,7 @@ Requiere **Neovim 0.9+** y tener instalado **Treesitter** para los lenguajes que
 
 ```lua
 {
-  "tu-usuario-github/autotemplate.nvim",
+  "jos3lo89/autotemplate.nvim",
   config = function()
     require("autotemplate").setup({
       -- Opcional: Tu configuración aquí

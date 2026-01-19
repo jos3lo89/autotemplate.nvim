@@ -16,7 +16,6 @@ local function get_string_node()
 	return nil
 end
 
--- Ahora devuelve true (si actuó) o false (si no hizo nada)
 function M.handle_trigger()
 	if vim.fn.mode() ~= "i" then
 		return false
@@ -45,16 +44,13 @@ function M.handle_trigger()
 	local start_txt = vim.api.nvim_buf_get_text(0, s_row, s_col, s_row, s_col + 1, {})[1]
 	local end_txt = vim.api.nvim_buf_get_text(0, e_row, e_col - 1, e_row, e_col, {})[1]
 
-	-- Teclas a inyectar: {} y flecha izquierda
 	local keys = vim.api.nvim_replace_termcodes("{}<Left>", true, false, true)
 
-	-- CASO 1: Ya son backticks -> Insertar llaves y reportar éxito
 	if start_txt == "`" then
 		vim.api.nvim_feedkeys(keys, "n", false)
 		return true
 	end
 
-	-- CASO 2: Transformar comillas
 	if (start_txt == "'" or start_txt == '"') and (start_txt == end_txt) then
 		-- Al no estar en expr=true, esto ya es legal
 		vim.api.nvim_buf_set_text(0, e_row, e_col - 1, e_row, e_col, { "`" })

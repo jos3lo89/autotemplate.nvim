@@ -1,8 +1,7 @@
 local M = {}
 
 M.defaults = {
-	-- Archivos donde funciona la interpolación tipo JS/TS `${}`
-	-- Puedes agregar más lenguajes que usen backticks para templates
+	-- LISTA BLANCA: Lenguajes donde queremos que funcione la interpolación `${}`
 	filetypes = {
 		"javascript",
 		"typescript",
@@ -10,9 +9,17 @@ M.defaults = {
 		"typescriptreact",
 		"vue",
 		"svelte",
+		"python", -- Python usa f"{}" pero la lógica de backticks no aplica igual, el usuario puede quitarlo si quiere
 	},
+
+	-- LISTA NEGRA: Tipos de archivo donde NUNCA debe activarse, incluso si están en la lista blanca
+	ignored_filetypes = {
+		"markdown",
+		"text",
+	},
+
 	disable_in_macro = true, -- No activar si se está grabando una macro
-	debug = false, -- Para ver mensajes si algo falla
+	debug = false, -- Para ver notificaciones de depuración
 }
 
 M.options = {}

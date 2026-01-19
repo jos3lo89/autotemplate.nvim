@@ -2,72 +2,73 @@ local M = {}
 local config = require("autotemplate.config")
 local core = require("autotemplate.core")
 
--- Estado interno
 M.enabled = true
 
--- Función para activar/desactivar manualmente
 function M.toggle()
 	M.enabled = not M.enabled
 	local status = M.enabled and "Activado" or "Desactivado"
 	vim.notify("AutoTemplate: " .. status, vim.log.levels.INFO)
 end
 
--- Función auxiliar para verificar si debemos adjuntar el plugin al buffer actual
+-- Función auxiliar para verificar si debemos adjuntar el plugin
 local function should_attach(bufnr)
 	if not M.enabled then
 		return false
 	end
-
 	local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
 
-	-- 1. Chequeo de Lista Negra (Prioridad Alta)
-	for _, ignore in ipairs(config.options.ignored_filetypes) do
+	-- 1. Chequeo de Lista Negra
+	for _, ignore in ipairs(config.options.ignored_filetypes or {}) do
 		if ft == ignore then
 			return false
 		end
 	end
 
 	-- 2. Chequeo de Lista Blanca
-	local is_supported = false
 	for _, supported in ipairs(config.options.filetypes) do
 		if ft == supported then
-			is_supported = true
-			break
+			return true
 		end
 	end
-
-	return is_supported
+	return false
 end
 
 function M.setup(opts)
 	config.setup(opts)
 
-	-- Comando de usuario :AutoTemplateToggle
 	vim.api.nvim_create_user_command("AutoTemplateToggle", M.toggle, {})
 
-	-- Autocomando principal
 	vim.api.nvim_create_autocmd("FileType", {
 		group = vim.api.nvim_create_augroup("AutoTemplateSetup", { clear = true }),
-		pattern = config.options.filetypes, -- Solo se dispara en los filetypes permitidos
+		pattern = config.options.filetypes,
 		callback = function(args)
-			-- Doble verificación (incluyendo blacklist) antes de mapear
 			if not should_attach(args.buf) then
 				return
 			end
 
-			-- Mapeo seguro de la tecla '{'
+			-- CAMBIO IMPORTANTE: expr = false
+			-- Ahora controlamos la escritura manualmente
 			vim.keymap.set("i", "{", function()
-				-- Verificaciones en tiempo real
+				-- 1. Si está desactivado, escribir '{' normal
 				if not M.enabled then
-					return "{"
-				end
-				if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
-					return "{"
+					vim.api.nvim_feedkeys("{", "n", false)
+					return
 				end
 
-				-- Llamada al núcleo (core.lua)
-				return core.handle_trigger()
-			end, { buffer = args.buf, expr = true, remap = false, desc = "Auto Template String Interpolation" })
+				-- 2. Chequeo de macro
+				if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
+					vim.api.nvim_feedkeys("{", "n", false)
+					return
+				end
+
+				-- 3. Intentar activar la lógica
+				local handled = core.handle_trigger()
+
+				-- 4. Si no se activó la lógica, escribir '{' normal
+				if not handled then
+					vim.api.nvim_feedkeys("{", "n", false)
+				end
+			end, { buffer = args.buf, expr = false, remap = false, desc = "Auto Template String" })
 		end,
 	})
 end

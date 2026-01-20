@@ -9,6 +9,7 @@ Automatically converts single (') or double (") quotes into backticks (`) when y
 ## Demo
 
 Imagine typing console.log("Hello ${name}"). When you type ${, the quotes are automatically converted to backticks and the cursor is placed inside the braces.
+![Demo de autotemplate](./assets/demo.gif)
 
 # autotemplate.nvim
 

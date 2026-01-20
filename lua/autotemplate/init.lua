@@ -45,15 +45,12 @@ end
 ---@param key string The key to look up (e.g. "{")
 ---@return table|nil The mapping definition or nil
 local function get_original_map(key)
-	-- Look for buffer-local or global mappings for this key in Insert mode
 	local map = vim.fn.maparg(key, "i", false, true)
-
-	-- Safety check: verify map exists and is not empty
 	if not map or vim.tbl_isempty(map) then
 		return nil
 	end
 
-	-- CRITICAL: Avoid capturing our own mapping if the plugin is reloaded
+	-- Critical: Don't capture our own mapping
 	if map.desc == "Auto Template String Interpolation" then
 		return nil
 	end
@@ -79,26 +76,44 @@ function M.setup(opts)
 
 			local trigger = config.options.trigger_key
 
-			-- 1. CAPTURE EXISTING MAPPING (e.g. nvim-autopairs)
-			-- We do this *before* setting our own map
+			-- 1. CAPTURE EXISTING MAPPING (autopairs, etc.)
 			local fallback_map = get_original_map(trigger)
 
 			-- 2. SET OUR MAPPING
 			vim.keymap.set("i", trigger, function()
-				-- Fallback Logic: What to do if we don't handle the key
+				-- Fallback Logic: Execute previous map correctly
 				local function fallback()
 					if fallback_map then
-						-- If there was a previous mapping, execute it directly
+						local keys_to_feed = nil
+
+						-- Case A: Lua Callback
 						if fallback_map.callback then
-							fallback_map.callback()
+							if fallback_map.expr == 1 then
+								-- Map is an expression: Call it and Capture result
+								keys_to_feed = fallback_map.callback()
+							else
+								-- Map is side-effect: Just call it
+								fallback_map.callback()
+								return
+							end
+
+						-- Case B: Vimscript RHS
 						elseif fallback_map.rhs then
-							local keys = vim.api.nvim_replace_termcodes(fallback_map.rhs, true, false, true)
-							-- Respect the original noremap setting
-							local mode = fallback_map.noremap == 1 and "n" or "m"
-							vim.api.nvim_feedkeys(keys, mode, false)
+							if fallback_map.expr == 1 then
+								-- Evaluate Vimscript expression
+								keys_to_feed = vim.api.nvim_eval(fallback_map.rhs)
+							else
+								keys_to_feed = fallback_map.rhs
+							end
+						end
+
+						-- Feed the result if any (using 'n' to prevent loops)
+						if keys_to_feed then
+							local term_keys = vim.api.nvim_replace_termcodes(keys_to_feed, true, false, true)
+							vim.api.nvim_feedkeys(term_keys, "n", false)
 						end
 					else
-						-- If no previous mapping, just insert the character cleanly (No recursion)
+						-- Case C: No previous map, just type the key
 						local key = vim.api.nvim_replace_termcodes(trigger, true, false, true)
 						vim.api.nvim_feedkeys(key, "n", false)
 					end
@@ -112,13 +127,13 @@ function M.setup(opts)
 					return fallback()
 				end
 
-				-- B. Core Logic
+				-- B. Core Logic (Lazy Load)
 				local core = require("autotemplate.core")
 				local handled = core.handle_trigger({
 					auto_close = config.options.auto_close_brackets,
 				})
 
-				-- C. If not handled, execute fallback (autopairs or normal key)
+				-- C. If not handled, execute fallback
 				if not handled then
 					fallback()
 				end

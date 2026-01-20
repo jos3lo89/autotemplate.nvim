@@ -17,14 +17,15 @@ The plugin is designed to be flexible and give you full control.
 Below is the recommended configuration for **[lazy.nvim](https://github.com/folke/lazy.nvim)**. Copy and paste this block into your plugins file:
 
 ```lua
-{
+return {
   "jos3lo89/autotemplate.nvim",
+  -- Default configuration
   opts = {
     filetypes = {
       "javascript",
       "typescript",
-      "javascriptreact", -- For .jsx
-      "typescriptreact", -- For .tsx
+      "javascriptreact",
+      "typescriptreact",
       "vue",
       "svelte",
     },

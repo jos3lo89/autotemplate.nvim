@@ -19,6 +19,7 @@ Below is the recommended configuration for **[lazy.nvim](https://github.com/folk
 ```lua
 return {
   "jos3lo89/autotemplate.nvim",
+  branch = "main",
   -- Default configuration
   opts = {
     filetypes = {

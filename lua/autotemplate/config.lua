@@ -1,12 +1,12 @@
 local M = {}
 
 ---@class AutoTemplateConfig
----@field filetypes string[] Lista de filetypes donde el plugin estará activo
----@field ignored_filetypes string[] Lista de filetypes a ignorar explícitamente
----@field disable_in_macro boolean Si es true, desactiva el plugin al grabar macros
----@field debug boolean Si es true, muestra notificaciones de depuración
----@field trigger_key string Tecla que activa la interpolación (Por defecto '{')
----@field auto_close_brackets boolean Si es true, inserta "}" automáticamente
+---@field filetypes string[] List of filetypes where the plugin is active
+---@field ignored_filetypes string[] List of filetypes to explicitly ignore
+---@field disable_in_macro boolean If true, disables the plugin while recording macros
+---@field debug boolean If true, shows debug notifications
+---@field trigger_key string Key that triggers interpolation (Default '{')
+---@field auto_close_brackets boolean If true, automatically inserts "}"
 local defaults = {
 	filetypes = {
 		"javascript",
@@ -26,15 +26,15 @@ local defaults = {
 	auto_close_brackets = true,
 }
 
----Configuración activa (se llena al llamar a setup)
+---Active configuration (populated when calling setup)
 ---@type AutoTemplateConfig
 M.options = vim.deepcopy(defaults)
 
----Valida que la configuración ingresada por el usuario sea correcta
+---Validates that the user-provided configuration is correct
 ---@param opts table
 local function validate_config(opts)
-	-- vim.validate espera una tabla donde:
-	-- clave = { valor_actual, tipo_esperado, es_opcional }
+	-- vim.validate expects a table where:
+	-- key = { current_value, expected_type, is_optional }
 	local ok, err = pcall(vim.validate, {
 		filetypes = { opts.filetypes, "table", true },
 		ignored_filetypes = { opts.ignored_filetypes, "table", true },
@@ -51,18 +51,18 @@ local function validate_config(opts)
 	return true
 end
 
----Inicializa la configuración del plugin
----@param opts? AutoTemplateConfig Tabla de configuración opcional
+---Initializes the plugin configuration
+---@param opts? AutoTemplateConfig Optional configuration table
 function M.setup(opts)
 	opts = opts or {}
 
-	-- 1. Validar tipos antes de mezclar (Evita mezclar basura)
+	-- 1. Validate types before merging (Prevents merging invalid data)
 	if not validate_config(opts) then
 		return
 	end
 
-	-- 2. Mezclar con defaults
-	-- Usamos 'force' para que la config del usuario sobrescriba la default
+	-- 2. Merge with defaults
+	-- Use 'force' so user config overrides the default
 	M.options = vim.tbl_deep_extend("force", defaults, opts)
 end
 

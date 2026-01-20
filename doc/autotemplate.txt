@@ -1,0 +1,104 @@
+*autotemplate.txt* Automatic template string conversion for Neovim
+
+==============================================================================
+CONTENTS                                               *autotemplate-contents*
+
+1. Introduction .......................... |autotemplate-introduction|
+2. Requirements .......................... |autotemplate-requirements|
+3. Installation .......................... |autotemplate-installation|
+4. Configuration ......................... |autotemplate-configuration|
+5. Commands .............................. |autotemplate-commands|
+6. Functions ............................. |autotemplate-functions|
+7. License ............................... |autotemplate-license|
+
+==============================================================================
+INTRODUCTION                                       *autotemplate-introduction*
+
+autotemplate.nvim automatically converts string quotes to template literals
+when you type a trigger key (default `${`) inside a string. It works seamlessly
+with JavaScript, TypeScript, and related languages using Treesitter.
+
+It is designed to be fast, lightweight, and unobtrusive.
+
+==============================================================================
+REQUIREMENTS                                       *autotemplate-requirements*
+
+- Neovim >= 0.9.0
+- nvim-treesitter with parsers installed for your target languages
+  (e.g., :TSInstall javascript typescript)
+
+==============================================================================
+INSTALLATION                                       *autotemplate-installation*
+
+Using lazy.nvim: >lua
+    {
+      "jos3lo89/autotemplate.nvim",
+      opts = {}
+    }
+<
+
+==============================================================================
+CONFIGURATION                                     *autotemplate-configuration*
+
+You can configure the plugin by passing a table to the setup function.
+Here are the default values:
+
+>lua
+    require("autotemplate").setup({
+      -- List of filetypes where the plugin is active
+      filetypes = {
+        "javascript",
+        "typescript",
+        "javascriptreact",
+        "typescriptreact",
+        "vue",
+        "svelte",
+      },
+      
+      -- List of filetypes to explicitly ignore
+      ignored_filetypes = {
+        "markdown",
+        "text",
+      },
+      
+      -- Key that triggers the interpolation check
+      trigger_key = "{",
+
+      -- Automatically insert the closing brace '}' and move cursor left
+      auto_close_brackets = true,
+
+      -- Disable plugin while recording macros to prevent errors
+      disable_in_macro = true,
+      
+      -- Enable debug notifications
+      debug = false,
+    })
+<
+
+==============================================================================
+COMMANDS                                               *autotemplate-commands*
+
+                                                         *:AutoTemplateToggle*
+:AutoTemplateToggle             Toggle the plugin on/off globally.
+
+==============================================================================
+FUNCTIONS                                             *autotemplate-functions*
+
+autotemplate.setup({opts})                              *autotemplate.setup()*
+    Setup the plugin with custom configuration.
+
+    Parameters: ~
+        {opts} (table|nil) Configuration options (see |autotemplate-configuration|)
+
+autotemplate.toggle()                                  *autotemplate.toggle()*
+    Toggle the plugin enabled state programmatically.
+
+autotemplate.teardown()                              *autotemplate.teardown()*
+    Removes all autocommands and disables the plugin cleanly.
+
+==============================================================================
+LICENSE                                                 *autotemplate-license*
+
+MIT License - see LICENSE file in the repo.
+
+vim:tw=78:ts=8:ft=help:norl:

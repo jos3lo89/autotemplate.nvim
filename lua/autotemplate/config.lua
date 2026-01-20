@@ -6,6 +6,7 @@ local M = {}
 ---@field disable_in_macro boolean Si es true, desactiva el plugin al grabar macros
 ---@field debug boolean Si es true, muestra notificaciones de depuración
 ---@field trigger_key string Tecla que activa la interpolación (Por defecto '{')
+---@field auto_close_brackets boolean Si es true, inserta "}" automáticamente
 local defaults = {
 	filetypes = {
 		"javascript",
@@ -22,6 +23,7 @@ local defaults = {
 	disable_in_macro = true,
 	debug = false,
 	trigger_key = "{",
+	auto_close_brackets = true,
 }
 
 ---Configuración activa (se llena al llamar a setup)
@@ -39,6 +41,7 @@ local function validate_config(opts)
 		disable_in_macro = { opts.disable_in_macro, "boolean", true },
 		debug = { opts.debug, "boolean", true },
 		trigger_key = { opts.trigger_key, "string", true },
+		auto_close_brackets = { opts.auto_close_brackets, "boolean", true },
 	})
 
 	if not ok then

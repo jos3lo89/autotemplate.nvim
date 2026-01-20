@@ -89,7 +89,9 @@ function M.setup(opts)
 				local core = require("autotemplate.core")
 
 				-- D. Ejecutar lógica
-				local handled = core.handle_trigger()
+				local handled = core.handle_trigger({
+					auto_close = config.options.auto_close_brackets,
+				})
 
 				-- E. Si core no hizo nada, devolver la tecla original
 				if not handled then

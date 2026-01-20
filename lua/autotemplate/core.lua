@@ -2,7 +2,11 @@ local M = {}
 
 -- Constantes
 local TRIGGER_CHAR = "$"
-local KEYS_TO_INJECT = "{}<Left>"
+-- Teclas a inyectar según configuración
+-- 1. Cuando auto_close_brackets = true
+local KEYS_WITH_CLOSE = "{}<Left>"
+-- 2. Cuando auto_close_brackets = false
+local KEYS_WITHOUT_CLOSE = "{"
 local MODE_INSERT = "i"
 
 -- Tipos de nodos válidos
@@ -64,8 +68,13 @@ local function apply_quote_transformation(start_row, start_col, end_row, end_col
 end
 
 ---Función principal
+---@param opts table Opciones pasadas desde init.lua (ej: { auto_close = true })
 ---@return boolean
-function M.handle_trigger()
+function M.handle_trigger(opts)
+	-- Recibimos opciones, default a true si no existen
+	opts = opts or {}
+	local auto_close = opts.auto_close ~= false -- default true
+
 	if vim.fn.mode() ~= MODE_INSERT then
 		return false
 	end
@@ -100,7 +109,13 @@ function M.handle_trigger()
 	local start_quote = start_text_list[1]
 	local end_quote = end_text_list[1]
 
-	local keys = vim.api.nvim_replace_termcodes(KEYS_TO_INJECT, true, false, true)
+	-- DETERMINAR QUÉ TECLAS ESCRIBIR
+	-- Si auto_close es true: escribimos {} y flecha izquierda
+	-- Si auto_close es false: escribimos solo {
+	local keys_to_inject = auto_close and KEYS_WITH_CLOSE or KEYS_WITHOUT_CLOSE
+
+	-- local keys = vim.api.nvim_replace_termcodes(KEYS_TO_INJECT, true, false, true)
+	local keys = vim.api.nvim_replace_termcodes(keys_to_inject, true, false, true)
 
 	-- CASO A: Ya son backticks
 	if start_quote == REPLACEMENT_QUOTE then

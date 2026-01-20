@@ -15,12 +15,9 @@ end
 
 ---Cleans up all plugin traces (Autocommands and internal state)
 function M.teardown()
-	-- Delete the autocommand group to stop listening to new FileTypes
 	if vim.fn.exists("#" .. AU_GROUP_NAME) == 1 then
 		vim.api.nvim_del_augroup_by_name(AU_GROUP_NAME)
 	end
-
-	-- Reset global enabled flag
 	M.enabled = false
 end
 
@@ -29,17 +26,13 @@ local function should_attach(bufnr)
 	if not M.enabled then
 		return false
 	end
-
 	local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
 
-	-- Priority: Blacklist check
 	for _, ignore in ipairs(config.options.ignored_filetypes) do
 		if ft == ignore then
 			return false
 		end
 	end
-
-	-- Whitelist check
 	for _, supported in ipairs(config.options.filetypes) do
 		if ft == supported then
 			return true
@@ -48,21 +41,34 @@ local function should_attach(bufnr)
 	return false
 end
 
+---Retrieves the existing mapping for a key to use as fallback
+---@param key string The key to look up (e.g. "{")
+---@return table|nil The mapping definition or nil
+local function get_original_map(key)
+	-- Look for buffer-local or global mappings for this key in Insert mode
+	local map = vim.fn.maparg(key, "i", false, true)
+
+	-- Safety check: verify map exists and is not empty
+	if not map or vim.tbl_isempty(map) then
+		return nil
+	end
+
+	-- CRITICAL: Avoid capturing our own mapping if the plugin is reloaded
+	if map.desc == "Auto Template String Interpolation" then
+		return nil
+	end
+
+	return map
+end
+
 function M.setup(opts)
-	-- Clean previous state if reloading the plugin
 	M.teardown()
 	M.enabled = true
-
-	-- Initialize configuration
 	config.setup(opts)
 
-	-- Create user commands
 	vim.api.nvim_create_user_command("AutoTemplateToggle", M.toggle, {})
-
-	-- Create Autogroup (clear=true removes old definitions)
 	local au_group = vim.api.nvim_create_augroup(AU_GROUP_NAME, { clear = true })
 
-	-- Main autocommand to handle filetype detection
 	vim.api.nvim_create_autocmd("FileType", {
 		group = au_group,
 		pattern = config.options.filetypes,
@@ -71,33 +77,48 @@ function M.setup(opts)
 				return
 			end
 
-			-- Dynamic mapping using the configured trigger key
-			vim.keymap.set("i", config.options.trigger_key, function()
-				-- Fallback function to allow other plugins (like nvim-autopairs) to handle the key
+			local trigger = config.options.trigger_key
+
+			-- 1. CAPTURE EXISTING MAPPING (e.g. nvim-autopairs)
+			-- We do this *before* setting our own map
+			local fallback_map = get_original_map(trigger)
+
+			-- 2. SET OUR MAPPING
+			vim.keymap.set("i", trigger, function()
+				-- Fallback Logic: What to do if we don't handle the key
 				local function fallback()
-					local key = vim.api.nvim_replace_termcodes(config.options.trigger_key, true, false, true)
-					vim.api.nvim_feedkeys(key, "m", false) -- 'm' = remap (allows other plugins to catch it)
+					if fallback_map then
+						-- If there was a previous mapping, execute it directly
+						if fallback_map.callback then
+							fallback_map.callback()
+						elseif fallback_map.rhs then
+							local keys = vim.api.nvim_replace_termcodes(fallback_map.rhs, true, false, true)
+							-- Respect the original noremap setting
+							local mode = fallback_map.noremap == 1 and "n" or "m"
+							vim.api.nvim_feedkeys(keys, mode, false)
+						end
+					else
+						-- If no previous mapping, just insert the character cleanly (No recursion)
+						local key = vim.api.nvim_replace_termcodes(trigger, true, false, true)
+						vim.api.nvim_feedkeys(key, "n", false)
+					end
 				end
 
-				-- A. If disabled, pass through
+				-- A. Guard clauses
 				if not M.enabled then
 					return fallback()
 				end
-
-				-- B. Check macro recording
 				if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
 					return fallback()
 				end
 
-				-- C. Lazy Load Core
+				-- B. Core Logic
 				local core = require("autotemplate.core")
-
-				-- D. Execute Logic
 				local handled = core.handle_trigger({
 					auto_close = config.options.auto_close_brackets,
 				})
 
-				-- E. If not handled (no '$' detected), use fallback with REMAP
+				-- C. If not handled, execute fallback (autopairs or normal key)
 				if not handled then
 					fallback()
 				end

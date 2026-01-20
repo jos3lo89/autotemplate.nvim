@@ -1,35 +1,37 @@
 local M = {}
 
--- Constantes
+-- CONSTANTS & CONFIGURATION
 local TRIGGER_CHAR = "$"
--- Teclas a inyectar según configuración
--- 1. Cuando auto_close_brackets = true
-local KEYS_WITH_CLOSE = "{}<Left>"
--- 2. Cuando auto_close_brackets = false
-local KEYS_WITHOUT_CLOSE = "{"
 local MODE_INSERT = "i"
+local REPLACEMENT_QUOTE = "`"
 
--- Tipos de nodos válidos
+-- Keys to inject based on the 'auto_close' configuration
+-- 1. When auto_close_brackets = true
+local KEYS_WITH_CLOSE = "{}<Left>"
+-- 2. When auto_close_brackets = false
+local KEYS_WITHOUT_CLOSE = "{"
+
+-- Valid Treesitter node types to detect string context
 local STRING_NODES = {
 	string = true,
 	template_string = true,
 }
 
--- Comillas a reemplazar
+-- Target quote characters that should be replaced
 local TARGET_QUOTES = {
 	['"'] = true,
 	["'"] = true,
 }
 
-local REPLACEMENT_QUOTE = "`"
+-- UTILITY FUNCTIONS
 
----Verifica si el buffer actual se puede modificar
+---Checks if the current buffer is modifiable
 ---@return boolean
 local function is_buffer_modifiable()
 	return vim.api.nvim_get_option_value("modifiable", { buf = 0 })
 end
 
----Obtiene el nodo de string padre de forma segura
+---Safely retrieves the parent string node using Treesitter
 ---@return TSNode|nil
 local function get_string_node_safe()
 	local ok, node = pcall(vim.treesitter.get_node)
@@ -37,6 +39,7 @@ local function get_string_node_safe()
 		return nil
 	end
 
+	-- Traverse up the tree to find a valid string node
 	while node do
 		if STRING_NODES[node:type()] then
 			return node
@@ -47,8 +50,8 @@ local function get_string_node_safe()
 	return nil
 end
 
----Obtiene el carácter anterior al cursor
----@param col number Columna actual (0-indexed)
+---Gets the character immediately before the cursor
+---@param col number Current column (0-indexed)
 ---@return string|nil
 local function get_char_before_cursor(col)
 	if col == 0 then
@@ -58,23 +61,32 @@ local function get_char_before_cursor(col)
 	return line:sub(col, col)
 end
 
----Ejecuta el cambio de comillas
+---Executes the atomic replacement of start and end quotes
+---@param start_row number
+---@param start_col number
+---@param end_row number
+---@param end_col number
+---@return boolean success
 local function apply_quote_transformation(start_row, start_col, end_row, end_col)
 	local ok = pcall(function()
+		-- Replace end quote first to maintain index integrity
 		vim.api.nvim_buf_set_text(0, end_row, end_col - 1, end_row, end_col, { REPLACEMENT_QUOTE })
 		vim.api.nvim_buf_set_text(0, start_row, start_col, start_row, start_col + 1, { REPLACEMENT_QUOTE })
 	end)
 	return ok
 end
 
----Función principal
----@param opts table Opciones pasadas desde init.lua (ej: { auto_close = true })
----@return boolean
+-- MAIN LOGIC
+
+---Main handler function
+---@param opts table Options passed from init.lua (e.g., { auto_close = true })
+---@return boolean handled Returns true if an action was performed
 function M.handle_trigger(opts)
-	-- Recibimos opciones, default a true si no existen
+	-- Retrieve options, defaulting to true if missing
 	opts = opts or {}
 	local auto_close = opts.auto_close ~= false -- default true
 
+	-- 1. State Validations
 	if vim.fn.mode() ~= MODE_INSERT then
 		return false
 	end
@@ -85,11 +97,13 @@ function M.handle_trigger(opts)
 	local cursor = vim.api.nvim_win_get_cursor(0)
 	local _, col = cursor[1] - 1, cursor[2]
 
+	-- 2. Trigger Character Validation
 	local char_before = get_char_before_cursor(col)
 	if char_before ~= TRIGGER_CHAR then
 		return false
 	end
 
+	-- 3. Treesitter Context Analysis
 	local node = get_string_node_safe()
 	if not node then
 		return false
@@ -97,7 +111,8 @@ function M.handle_trigger(opts)
 
 	local s_row, s_col, e_row, e_col = node:range()
 
-	-- CORRECCIÓN 2: Usamos nombres distintos para la lista (resultado API) y el string final
+	-- 4. Safe Text Retrieval
+	-- Use pcall to avoid errors if buffer state changes rapidly
 	local ok_start, start_text_list = pcall(vim.api.nvim_buf_get_text, 0, s_row, s_col, s_row, s_col + 1, {})
 	local ok_end, end_text_list = pcall(vim.api.nvim_buf_get_text, 0, e_row, e_col - 1, e_row, e_col, {})
 
@@ -105,25 +120,23 @@ function M.handle_trigger(opts)
 		return false
 	end
 
-	-- Extraemos el string de la lista de forma segura
+	-- Extract the actual string character from the list
 	local start_quote = start_text_list[1]
 	local end_quote = end_text_list[1]
 
-	-- DETERMINAR QUÉ TECLAS ESCRIBIR
-	-- Si auto_close es true: escribimos {} y flecha izquierda
-	-- Si auto_close es false: escribimos solo {
+	-- 5. Determine Keys to Inject
+	-- If auto_close is true: inject {} and move cursor left
+	-- If auto_close is false: inject only {
 	local keys_to_inject = auto_close and KEYS_WITH_CLOSE or KEYS_WITHOUT_CLOSE
-
-	-- local keys = vim.api.nvim_replace_termcodes(KEYS_TO_INJECT, true, false, true)
 	local keys = vim.api.nvim_replace_termcodes(keys_to_inject, true, false, true)
 
-	-- CASO A: Ya son backticks
+	-- CASE A: Already backticks (Standard interpolation)
 	if start_quote == REPLACEMENT_QUOTE then
 		vim.api.nvim_feedkeys(keys, "n", false)
 		return true
 	end
 
-	-- CASO B: Transformar comillas
+	-- CASE B: Transform quotes (' or ")
 	if TARGET_QUOTES[start_quote] and start_quote == end_quote then
 		local success = apply_quote_transformation(s_row, s_col, e_row, e_col)
 		if success then

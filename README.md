@@ -4,12 +4,10 @@
 
 ![Neovim](https://img.shields.io/badge/Neovim-0.9+-green.svg?style=for-the-badge&logo=neovim)
 ![Lua](https://img.shields.io/badge/Lua-blue.svg?style=for-the-badge&logo=lua)
-![License](https://img.shields.io/github/license/yourusername/autotemplate.nvim?style=for-the-badge)
-[![CI](https://img.shields.io/github/actions/workflow/status/yourusername/autotemplate.nvim/ci.yml?branch=main&style=for-the-badge)](https://github.com/yourusername/autotemplate.nvim/actions)
 
 **Automatic template string conversion for Neovim using Treesitter**
 
-[Features](#-features) • [Installation](#-installation) • [Configuration](#%EF%B8%8F-configuration) • [Commands](#-commands) • [Contributing](#-contributing)
+[Features](#-features) • [Installation](#-installation) • [Configuration](#%EF%B8%8F-configuration) • [Commands](#-commands)
 
 </div>
 
@@ -89,9 +87,9 @@ require("autotemplate").setup({
 | `:AutoTemplateDisable`      | Disable plugin       |
 | `:checkhealth autotemplate` | Check plugin health  |
 
-## 🎬 Demo
+<!-- ## 🎬 Demo
 
-https://github.com/yourusername/autotemplate.nvim/assets/demo.gif
+https://github.com/yourusername/autotemplate.nvim/assets/demo.gif -->
 
 ## 🔍 How It Works
 
@@ -104,19 +102,6 @@ https://github.com/yourusername/autotemplate.nvim/assets/demo.gif
 - Places cursor inside `{}`
 
 3.  Result: ``console.log(`Hello ${name}`)``
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](https://claude.ai/chat/CONTRIBUTING.md) first.
-
-## 📝 License
-
-[MIT](https://claude.ai/chat/LICENSE) © [jos3lo89]
-
-## 🙏 Acknowledgments
-
-- Inspired by similar functionality in modern IDEs
-- Built with [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)
 
 ---
 

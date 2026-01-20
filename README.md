@@ -1,50 +1,125 @@
-# ✨ autotemplate.nvim
+# 🚀 autotemplate.nvim
 
-<p align="center">
-  <strong>Automatic String Interpolation for Neovim using Treesitter.</strong>
-</p>
+<div align="center">
 
-Automatically converts single (`'`) or double (`"`) quotes into backticks (`` ` ``) when you type `${` inside a string.
+![Neovim](https://img.shields.io/badge/Neovim-0.9+-green.svg?style=for-the-badge&logo=neovim)
+![Lua](https://img.shields.io/badge/Lua-blue.svg?style=for-the-badge&logo=lua)
+![License](https://img.shields.io/github/license/yourusername/autotemplate.nvim?style=for-the-badge)
+[![CI](https://img.shields.io/github/actions/workflow/status/yourusername/autotemplate.nvim/ci.yml?branch=main&style=for-the-badge)](https://github.com/yourusername/autotemplate.nvim/actions)
 
-## ⚡ Demo
+**Automatic template string conversion for Neovim using Treesitter**
 
-> Imagine typing `console.log("Hello ${name}")`. When you type `${`, the quotes are automatically converted to backticks and the cursor is placed inside the braces.
+[Features](#-features) • [Installation](#-installation) • [Configuration](#%EF%B8%8F-configuration) • [Commands](#-commands) • [Contributing](#-contributing)
 
-## 📦 Installation and Configuration
+</div>
 
-The plugin is designed to be flexible and give you full control.
+---
 
-Below is the recommended configuration for **[lazy.nvim](https://github.com/folke/lazy.nvim)**. Copy and paste this block into your plugins file:
+## ✨ Features
+
+- 🎯 **Automatic Conversion**: Type `${` inside a string and watch quotes convert to backticks
+- ⚡ **Lightning Fast**: Powered by Treesitter for accurate parsing
+- 🎨 **Multi-Language**: Supports JavaScript, TypeScript, React, Vue, Svelte
+- 🔧 **Highly Configurable**: Customize filetypes, behavior, and more
+- 📦 **Zero Dependencies**: Only requires nvim-treesitter
+
+## 📦 Installation
+
+### [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
-return {
-  "jos3lo89/autotemplate.nvim",
-  branch = "main",
-  -- Default configuration
+{
+  "yourusername/autotemplate.nvim",
+  dependencies = { "nvim-treesitter/nvim-treesitter" },
+  event = "InsertEnter",
   opts = {
-    filetypes = {
-      "javascript",
-      "typescript",
-      "javascriptreact",
-      "typescriptreact",
-      "vue",
-      "svelte",
-    },
-    ignored_filetypes = {
-      "text",
-      "markdown",
-    },
+    -- Your config here
   },
 }
-
-
 ```
 
-### Requirements
+### [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
-- **Neovim 0.9+**
-- **Nvim-Treesitter** installed with the parsers for your languages (`:TSInstall javascript`, etc.)
+```lua
+use {
+  "yourusername/autotemplate.nvim",
+  requires = { "nvim-treesitter/nvim-treesitter" },
+  config = function()
+    require("autotemplate").setup()
+  end
+}
+```
 
-## 🚀 Commands
+## ⚙️ Configuration
 
-- `:AutoTemplateToggle` - Enables or disables the plugin globally.
+Default configuration:
+
+```lua
+require("autotemplate").setup({
+  -- Languages to enable
+  filetypes = {
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact",
+    "vue",
+    "svelte",
+  },
+
+  -- Languages to explicitly ignore
+  ignored_filetypes = {
+    "markdown",
+    "text",
+  },
+
+  -- Disable during macro recording
+  disable_in_macro = true,
+
+  -- Enable debug messages
+  debug = false,
+})
+```
+
+## 🎮 Commands
+
+| Command                     | Description          |
+| --------------------------- | -------------------- |
+| `:AutoTemplateToggle`       | Toggle plugin on/off |
+| `:AutoTemplateEnable`       | Enable plugin        |
+| `:AutoTemplateDisable`      | Disable plugin       |
+| `:checkhealth autotemplate` | Check plugin health  |
+
+## 🎬 Demo
+
+https://github.com/yourusername/autotemplate.nvim/assets/demo.gif
+
+## 🔍 How It Works
+
+1. You type `console.log("Hello ${name}")`
+2. When you
+3. type the `{` after `$`, the plugin:
+
+- Detects you're inside a string
+- Converts `"` to `` ` ``
+- Places cursor inside `{}`
+
+3.  Result: ``console.log(`Hello ${name}`)``
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](https://claude.ai/chat/CONTRIBUTING.md) first.
+
+## 📝 License
+
+[MIT](https://claude.ai/chat/LICENSE) © [jos3lo89]
+
+## 🙏 Acknowledgments
+
+- Inspired by similar functionality in modern IDEs
+- Built with [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)
+
+---
+
+<div align="center">
+Made with ❤️ for the Neovim community
+</div>

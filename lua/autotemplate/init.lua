@@ -1,30 +1,30 @@
 local M = {}
 local config = require("autotemplate.config")
 
--- Constante para el grupo de autocomandos (evita duplicados al recargar)
+-- Autocommand group name to prevent duplication during reloads
 local AU_GROUP_NAME = "AutoTemplateSetup"
 
 M.enabled = true
 
----Activa o desactiva el plugin dinámicamente
+---Dynamically toggles the plugin state
 function M.toggle()
 	M.enabled = not M.enabled
-	local status = M.enabled and "Activado" or "Desactivado"
+	local status = M.enabled and "Enabled" or "Disabled"
 	vim.notify("AutoTemplate: " .. status, vim.log.levels.INFO)
 end
 
----Limpia todo rastro del plugin (Autocommands y estado)
+---Cleans up all plugin traces (Autocommands and internal state)
 function M.teardown()
-	-- 1. Borrar el grupo de autocomandos (deja de escuchar FileTypes nuevos)
+	-- Delete the autocommand group to stop listening to new FileTypes
 	if vim.fn.exists("#" .. AU_GROUP_NAME) == 1 then
 		vim.api.nvim_del_augroup_by_name(AU_GROUP_NAME)
 	end
 
-	-- 2. Desactivar flag global
+	-- Reset global enabled flag
 	M.enabled = false
 end
 
----Verifica si el buffer actual debe tener el plugin activo
+---Checks if the plugin should attach to the current buffer
 local function should_attach(bufnr)
 	if not M.enabled then
 		return false
@@ -32,14 +32,14 @@ local function should_attach(bufnr)
 
 	local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
 
-	-- Prioridad: Lista Negra
+	-- Priority: Blacklist check
 	for _, ignore in ipairs(config.options.ignored_filetypes) do
 		if ft == ignore then
 			return false
 		end
 	end
 
-	-- Lista Blanca
+	-- Whitelist check
 	for _, supported in ipairs(config.options.filetypes) do
 		if ft == supported then
 			return true
@@ -49,20 +49,20 @@ local function should_attach(bufnr)
 end
 
 function M.setup(opts)
-	-- 0. Limpiar estado previo si se está recargando el plugin
+	-- Clean previous state if reloading the plugin
 	M.teardown()
 	M.enabled = true
 
-	-- 1. Configurar opciones
+	-- Initialize configuration
 	config.setup(opts)
 
-	-- 2. Crear comandos de usuario
+	-- Create user commands
 	vim.api.nvim_create_user_command("AutoTemplateToggle", M.toggle, {})
 
-	-- 3. Crear Autogroup (clear = true elimina duplicados viejos)
+	-- Create Autogroup (clear=true removes old definitions)
 	local au_group = vim.api.nvim_create_augroup(AU_GROUP_NAME, { clear = true })
 
-	-- 4. Autocomando principal
+	-- Main autocommand to handle filetype detection
 	vim.api.nvim_create_autocmd("FileType", {
 		group = au_group,
 		pattern = config.options.filetypes,
@@ -71,38 +71,36 @@ function M.setup(opts)
 				return
 			end
 
-			-- MAPEO DINÁMICO (Usa trigger_key de la config)
+			-- Dynamic mapping using the configured trigger key
 			vim.keymap.set("i", config.options.trigger_key, function()
-				-- A. Si está desactivado, comportamiento nativo
+				-- If disabled, fallback to native behavior
 				if not M.enabled then
-					return config.options.trigger_key -- Devuelve la tecla literal
+					return config.options.trigger_key
 				end
 
-				-- B. Chequeo de macros
+				-- Check if a macro is being recorded to avoid interruptions
 				if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
 					return config.options.trigger_key
 				end
 
-				-- C. LAZY LOADING REAL:
-				-- Solo requerimos 'core' cuando el usuario presiona la tecla.
-				-- Esto hace que el inicio de Neovim sea instantáneo.
+				-- Lazy Loading: Require 'core' only when the user presses the key
+				-- This ensures instant startup time for Neovim
 				local core = require("autotemplate.core")
 
-				-- D. Ejecutar lógica
+				-- Execute core logic
 				local handled = core.handle_trigger({
 					auto_close = config.options.auto_close_brackets,
 				})
 
-				-- E. Si core no hizo nada, devolver la tecla original
+				-- If core did not handle the input, return the original key
 				if not handled then
-					-- Usamos feedkeys para simular la pulsación natural si falló la lógica
-					-- Nota: Retornar string en expr=true es mejor, pero ya cambiamos a expr=false
-					-- por seguridad del buffer, así que usamos feedkeys.
+					-- Use feedkeys to simulate natural input if logic failed or was skipped
+					-- Note: expr=false is used for buffer safety, so we use feedkeys instead of returning the string
 					vim.api.nvim_feedkeys(config.options.trigger_key, "n", false)
 				end
 			end, {
 				buffer = args.buf,
-				expr = false, -- Mantenemos false por seguridad con nvim_buf_set_text
+				expr = false,
 				remap = false,
 				desc = "Auto Template String Interpolation",
 			})

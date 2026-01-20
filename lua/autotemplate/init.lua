@@ -73,30 +73,33 @@ function M.setup(opts)
 
 			-- Dynamic mapping using the configured trigger key
 			vim.keymap.set("i", config.options.trigger_key, function()
-				-- If disabled, fallback to native behavior
+				-- Fallback function to allow other plugins (like nvim-autopairs) to handle the key
+				local function fallback()
+					local key = vim.api.nvim_replace_termcodes(config.options.trigger_key, true, false, true)
+					vim.api.nvim_feedkeys(key, "m", false) -- 'm' = remap (allows other plugins to catch it)
+				end
+
+				-- A. If disabled, pass through
 				if not M.enabled then
-					return config.options.trigger_key
+					return fallback()
 				end
 
-				-- Check if a macro is being recorded to avoid interruptions
+				-- B. Check macro recording
 				if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
-					return config.options.trigger_key
+					return fallback()
 				end
 
-				-- Lazy Loading: Require 'core' only when the user presses the key
-				-- This ensures instant startup time for Neovim
+				-- C. Lazy Load Core
 				local core = require("autotemplate.core")
 
-				-- Execute core logic
+				-- D. Execute Logic
 				local handled = core.handle_trigger({
 					auto_close = config.options.auto_close_brackets,
 				})
 
-				-- If core did not handle the input, return the original key
+				-- E. If not handled (no '$' detected), use fallback with REMAP
 				if not handled then
-					-- Use feedkeys to simulate natural input if logic failed or was skipped
-					-- Note: expr=false is used for buffer safety, so we use feedkeys instead of returning the string
-					vim.api.nvim_feedkeys(config.options.trigger_key, "n", false)
+					fallback()
 				end
 			end, {
 				buffer = args.buf,

@@ -64,6 +64,9 @@ Here are the default values:
       -- Key that triggers the interpolation check
       trigger_key = "{",
 
+      -- Automatically insert the closing brace '}' and move cursor left
+      auto_close_brackets = true,
+
       -- Disable plugin while recording macros to prevent errors
       disable_in_macro = true,
       

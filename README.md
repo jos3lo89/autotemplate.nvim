@@ -27,7 +27,7 @@
 
 ```lua
 {
-  "yourusername/autotemplate.nvim",
+  "jos3lo89/autotemplate.nvim",
   dependencies = { "nvim-treesitter/nvim-treesitter" },
   event = "InsertEnter",
   opts = {
@@ -40,7 +40,7 @@
 
 ```lua
 use {
-  "yourusername/autotemplate.nvim",
+  "jos3lo89/autotemplate.nvim",
   requires = { "nvim-treesitter/nvim-treesitter" },
   config = function()
     require("autotemplate").setup()

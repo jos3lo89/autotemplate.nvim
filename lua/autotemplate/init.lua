@@ -16,7 +16,7 @@ function M.setup(opts)
 	vim.api.nvim_create_augroup(AU_GROUP, { clear = true })
 	vim.api.nvim_create_user_command("AutoTemplateToggle", M.toggle, {})
 
-	-- Evento: TextChangedI
+	-- TextChangedI only
 	vim.api.nvim_create_autocmd("TextChangedI", {
 		group = AU_GROUP,
 		pattern = "*",
@@ -25,24 +25,23 @@ function M.setup(opts)
 				return
 			end
 
-			-- 1. Check de Buffer Type (Evitar consolas, prompts, etc)
-			-- 'buftype' vacío es un archivo normal. 'nofile', 'prompt', etc se ignoran.
+			-- Ignore special buffers
 			if vim.bo[evt.buf].buftype ~= "" then
 				return
 			end
 
-			-- 2. Check de Filetype (O(1) gracias al mapa en config)
+			-- Filetype allowlist
 			local ft = vim.bo[evt.buf].filetype
 			if not config.options.filetypes[ft] then
 				return
 			end
 
-			-- 3. Check de Macros
+			-- Skip macro recording
 			if config.options.disable_in_macro and vim.fn.reg_recording() ~= "" then
 				return
 			end
 
-			-- Solo si pasa todo esto, llamamos al core
+			-- Core logic
 			core.check_and_transform()
 		end,
 	})

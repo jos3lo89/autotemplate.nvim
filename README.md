@@ -1,5 +1,7 @@
 # autotemplate.nvim
 
+> **⚠️ Early Development Warning**: This plugin is in very early development stage. It's not a final version and hasn't been properly tested or optimized for performance yet. Use with caution.
+
 Automatic string interpolation for Neovim using Treesitter.
 
 When you type `${` inside a string, the plugin converts `'` or `"` to backticks
